@@ -1,0 +1,374 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>粒子捕手 | 数媒互动游戏</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+            padding: 1rem;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #f8fafc;
+            font-family: 'Microsoft Yahei', sans-serif;
+        }
+        h1 {
+            margin: 1rem 0;
+            font-size: 2rem;
+            background: linear-gradient(90deg, #38bdf8, #a78bfa);
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+        }
+        .container {
+            display: flex;
+            gap: 2rem;
+            align-items: flex-start;
+            max-width: 1200px;
+            width: 100%;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        canvas {
+            border: 2px solid #334155;
+            border-radius: 12px;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.3);
+            cursor: crosshair;
+        }
+        .control-panel {
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 12px;
+            padding: 1.5rem;
+            width: 300px;
+            border: 1px solid #475569;
+            backdrop-filter: blur(8px);
+        }
+        .panel-title {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            color: #38bdf8;
+            border-bottom: 1px solid #475569;
+            padding-bottom: 0.5rem;
+        }
+        .control-group {
+            margin-bottom: 1rem;
+        }
+        label {
+            display: block;
+            margin-bottom: 0.5rem;
+            font-size: 0.9rem;
+            color: #94a3b8;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #38bdf8;
+        }
+        input[type="number"] {
+            width: 100%;
+            padding: 0.5rem;
+            background: rgba(15, 23, 42, 0.8);
+            border: 1px solid #475569;
+            border-radius: 6px;
+            color: #f8fafc;
+            margin-top: 0.3rem;
+        }
+        .btn-group {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-top: 1rem;
+        }
+        .btn {
+            flex: 1;
+            padding: 0.6rem 1rem;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            transition: all 0.2s ease;
+            min-width: 80px;
+        }
+        .btn-primary {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        .btn-primary:hover {
+            background: #0ea5e9;
+        }
+        .btn-secondary {
+            background: #64748b;
+            color: #f8fafc;
+        }
+        .btn-secondary:hover {
+            background: #475569;
+        }
+        .btn-danger {
+            background: #ef4444;
+            color: #f8fafc;
+        }
+        .btn-danger:hover {
+            background: #dc2626;
+        }
+        .mode-tabs {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 1rem;
+        }
+        .mode-tab {
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            background: #475569;
+            cursor: pointer;
+            flex: 1;
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+        .mode-tab.active {
+            background: #38bdf8;
+            color: #0f172a;
+        }
+        .tips {
+            margin-top: 1rem;
+            font-size: 0.85rem;
+            color: #94a3b8;
+            text-align: center;
+            max-width: 600px;
+        }
+        .shortcut {
+            background: rgba(46, 52, 64, 0.8);
+            padding: 0.3rem 0.6rem;
+            border-radius: 4px;
+            font-family: monospace;
+            font-size: 0.8rem;
+        }
+        /* 新增：游戏状态面板 */
+        .game-panel {
+            display: flex;
+            justify-content: space-between;
+            width: 100%;
+            max-width: 800px;
+            margin-bottom: 1rem;
+            padding: 0.8rem 1.5rem;
+            background: rgba(30, 41, 59, 0.8);
+            border-radius: 10px;
+            border: 1px solid #475569;
+        }
+        .game-info {
+            display: flex;
+            align-items: center;
+            gap: 2rem;
+        }
+        .info-item {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .info-icon {
+            font-size: 1.2rem;
+        }
+        .score {
+            color: #22c55e;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        .life {
+            color: #ef4444;
+            font-size: 1.2rem;
+        }
+        .level {
+            color: #f97316;
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+        /* 游戏结束弹窗 */
+        .game-over {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            z-index: 100;
+            display: none;
+        }
+        .game-over-content {
+            background: #1e293b;
+            padding: 2rem;
+            border-radius: 12px;
+            border: 2px solid #38bdf8;
+            text-align: center;
+            width: 90%;
+            max-width: 400px;
+        }
+        .game-over-title {
+            font-size: 1.8rem;
+            color: #ef4444;
+            margin-bottom: 1rem;
+        }
+        .final-score {
+            font-size: 1.5rem;
+            margin: 1rem 0;
+            color: #f8fafc;
+        }
+        .final-score span {
+            color: #22c55e;
+            font-weight: bold;
+        }
+        /* 捕手样式（Canvas内绘制，这里仅做光标提示） */
+        @media (max-width: 768px) {
+            .container {
+                flex-direction: column;
+                align-items: center;
+            }
+            .control-panel {
+                width: 100%;
+                max-width: 600px;
+            }
+            canvas {
+                width: 100%;
+                height: auto;
+            }
+            .game-panel {
+                flex-direction: column;
+                gap: 0.5rem;
+                align-items: flex-start;
+            }
+            .game-info {
+                gap: 1rem;
+                flex-wrap: wrap;
+            }
+        }
+    </style>
+</head>
+<body>
+    <h1>数媒技 · 粒子捕手游戏</h1>
+    <!-- 新增：游戏状态面板 -->
+    <div class="game-panel">
+        <div class="game-info">
+            <div class="info-item">
+                <span class="info-icon">🎯</span>
+                <span>得分: <span class="score" id="score">0</span></span>
+            </div>
+            <div class="info-item">
+                <span class="info-icon">❤️</span>
+                <span>生命: <span class="life" id="life">3</span></span>
+            </div>
+            <div class="info-item">
+                <span class="info-icon">🏆</span>
+                <span>关卡: <span class="level" id="level">1</span></span>
+            </div>
+        </div>
+        <button class="btn btn-primary" id="startGame">开始游戏</button>
+    </div>
+
+    <div class="container">
+        <canvas id="interactiveCanvas" width="800" height="600"></canvas>
+        <div class="control-panel">
+            <div class="panel-title">交互控制面板</div>
+            
+            <!-- 模式切换（保留原模式，新增游戏模式） -->
+            <div class="mode-tabs">
+                <div class="mode-tab" data-mode="particle">粒子模式</div>
+                <div class="mode-tab" data-mode="audio">音频可视化</div>
+                <div class="mode-tab" data-mode="draw">手绘模式</div>
+                <div class="mode-tab active" data-mode="game">游戏模式</div>
+            </div>
+
+            <!-- 游戏参数（新增） -->
+            <div class="control-group" id="game-controls">
+                <label>粒子速度 (1-5)
+                    <input type="range" id="particleSpeed" min="1" max="5" value="2" oninput="document.getElementById('speedValue').value = this.value">
+                    <input type="number" id="speedValue" min="1" max="5" value="2" oninput="document.getElementById('particleSpeed').value = this.value">
+                </label>
+                <label>毒粒子占比 (5%-30%)
+                    <input type="range" id="poisonRatio" min="5" max="30" value="10" oninput="document.getElementById('ratioValue').value = this.value">
+                    <input type="number" id="ratioValue" min="5" max="30" value="10" oninput="document.getElementById('poisonRatio').value = this.value">
+                </label>
+                <label>道具刷新率 (10-60秒)
+                    <input type="range" id="propRate" min="10" max="60" value="30" oninput="document.getElementById('rateValue').value = this.value">
+                    <input type="number" id="rateValue" min="10" max="60" value="30" oninput="document.getElementById('propRate').value = this.value">
+                </label>
+            </div>
+
+            <!-- 粒子参数（保留，游戏模式下仍可调节） -->
+            <div class="control-group" id="particle-controls" style="display: none;">
+                <label>粒子数量 (100-2000)
+                    <input type="range" id="particleCount" min="100" max="2000" value="800" oninput="document.getElementById('countValue').value = this.value">
+                    <input type="number" id="countValue" min="100" max="2000" value="800" oninput="document.getElementById('particleCount').value = this.value">
+                </label>
+                <label>粒子大小 (1-10)
+                    <input type="range" id="particleSize" min="1" max="10" value="3" oninput="document.getElementById('sizeValue').value = this.value">
+                    <input type="number" id="sizeValue" min="1" max="10" value="3" oninput="document.getElementById('particleSize').value = this.value">
+                </label>
+                <label>重力系数 (0-0.5)
+                    <input type="range" id="gravity" min="0" max="0.5" step="0.01" value="0.05" oninput="document.getElementById('gravityValue').value = this.value">
+                    <input type="number" id="gravityValue" min="0" max="0.5" step="0.01" value="0.05" oninput="document.getElementById('gravity').value = this.value">
+                </label>
+            </div>
+
+            <!-- 音频可视化（保留） -->
+            <div class="control-group" id="audio-controls" style="display: none;">
+                <label>频谱柱数量 (16-64)
+                    <input type="range" id="audioBars" min="16" max="64" value="32" oninput="document.getElementById('barsValue').value = this.value">
+                    <input type="number" id="barsValue" min="16" max="64" value="32" oninput="document.getElementById('audioBars').value = this.value">
+                </label>
+                <label>频谱高度 (50-300)
+                    <input type="range" id="audioHeight" min="50" max="300" value="200" oninput="document.getElementById('heightValue').value = this.value">
+                    <input type="number" id="heightValue" min="50" max="300" value="200" oninput="document.getElementById('audioHeight').value = this.value">
+                </label>
+                <button class="btn btn-primary" id="startAudio">开启麦克风</button>
+            </div>
+
+            <!-- 手绘模式（保留） -->
+            <div class="control-group" id="draw-controls" style="display: none;">
+                <label>画笔粗细 (1-20)
+                    <input type="range" id="brushSize" min="1" max="20" value="5" oninput="document.getElementById('brushValue').value = this.value">
+                    <input type="number" id="brushValue" min="1" max="20" value="5" oninput="document.getElementById('brushSize').value = this.value">
+                </label>
+                <label>画笔颜色
+                    <input type="color" id="brushColor" value="#38bdf8">
+                </label>
+            </div>
+
+            <!-- 功能按钮（保留+新增游戏按钮） -->
+            <div class="btn-group">
+                <button class="btn btn-primary" id="saveBtn">保存截图</button>
+                <button class="btn btn-secondary" id="resetBtn">重置画布</button>
+                <button class="btn btn-danger" id="clearBtn">清空画布</button>
+            </div>
+        </div>
+    </div>
+    <p class="tips">
+        游戏规则：拖动鼠标/手指控制捕手，捕捉彩色粒子得分，躲避黑色毒粒子 | 
+        快捷键：<span class="shortcut">空格</span>切换模式 | <span class="shortcut">S</span>保存 | <span class="shortcut">R</span>重置
+    </p>
+
+    <!-- 游戏结束弹窗（新增） -->
+    <div class="game-over" id="gameOver">
+        <div class="game-over-content">
+            <h2 class="game-over-title">游戏结束！</h2>
+            <p class="final-score">最终得分：<span id="finalScore">0</span></p>
+            <p class="final-score">当前关卡：<span id="finalLevel">1</span></p>
+            <div class="btn-group" style="margin-top: 2rem;">
+                <button class="btn btn-primary" id="restartGame">重新开始</button>
+                <button class="btn btn-secondary" id="exitGame">退出游戏</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/main.js"></script>
+</body>
+</html>
